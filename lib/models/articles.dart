@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:news_app/models/sources.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 
 class Article {
   Source? source;
@@ -44,5 +47,45 @@ class Article {
     data['publishedAt'] = publishedAt;
     data['content'] = content;
     return data;
+  }
+}
+
+extension ArticleExtensions on Article {
+  Future<void> launchUrl(BuildContext context) async {
+    if (url == null || url!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('The article does not have a valid URL.'),
+        ),
+      );
+      return;
+    }
+    final uri = Uri.tryParse(url!);
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid URL format. Please try another article.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await launcher.launchUrl(uri);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'An error occurred while trying to open the URL. Please try again.'),
+        ),
+      );
+      print(e);
+    }
+  }
+
+  String formatDate() {
+    if (publishedAt == null || publishedAt!.isEmpty) return 'Date Unknown';
+    DateTime parsedDate = DateTime.parse(publishedAt!);
+    return DateFormat('MMMM dd, yyyy hh:mm a').format(parsedDate);
   }
 }
